@@ -1,5 +1,6 @@
 import requests
 import json
+import urllib.parse
 from flask import Flask, render_template, send_from_directory, request
 
 app = Flask(__name__)
@@ -18,9 +19,21 @@ def main():
 
     if code and state:
         API_ENDPOINT = 'https://discord.com/api/v10'
-        return "yes code"
+        data = {
+            'client_id': CLIENT_ID,
+            'client_secret': CLIENT_SECRET,
+            'grant_type': 'authorization_code',
+            'code': code,
+            'redirect_uri': URL
+        }
+        headers = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+        r = requests.post(f'{API_ENDPOINT}/oauth2/token', data=data, headers=headers)
+        r.raise_for_status()
+        return r.json()
     else:
-        return render_template('index.html', url=URL, client_id=CLIENT_ID, state='newyork')
+        return render_template('index.html', url=urllib.parse.quote(URL), client_id=CLIENT_ID, state='newyork')
 
 
 app.run(port=36666, debug=True)
