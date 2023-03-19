@@ -1,0 +1,33 @@
+{
+    "title":"test",
+    "questions": [
+        {
+            "type": "text",
+            "text": "What is your name?",
+            "options": {
+                "can-skip":false,
+                "min-length":0,
+                "max-length":100
+            }
+        },
+        {
+            "type": "number",
+            "text": "What is your age?",
+            "options": {
+                "can-skip":true,
+                "min":0,
+                "max":100,
+                "steps":1
+            }
+        },
+        {
+            "type": "radio",
+            "text": "What is your gender?",
+            "options": {
+                "can-skip":true,
+                "choices":["male", "female", "non-binary"],
+                "text-other":true
+            }
+        }
+    ]
+}
