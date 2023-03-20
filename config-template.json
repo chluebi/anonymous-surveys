@@ -1,5 +1,6 @@
 {
     "url":"",
     "client-id":0,
-    "client-secret":""
+    "client-secret":"",
+    "pepper":""
 }
