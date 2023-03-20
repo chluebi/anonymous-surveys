@@ -1,5 +1,7 @@
 {
     "title":"test",
+    "guild-only":true,
+    "guilds":[],
     "questions": [
         {
             "type": "text",

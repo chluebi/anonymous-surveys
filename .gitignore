@@ -2,3 +2,6 @@
 Pipfile.lock
 
 config.json
+
+data/*
+!data/test
