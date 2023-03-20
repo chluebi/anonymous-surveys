@@ -1,6 +1,7 @@
 {
     "title":"test",
-    "active":false,
+    "url":"test",
+    "active":true,
     "guild-only":true,
     "guilds":[],
     "questions": [
