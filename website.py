@@ -167,9 +167,8 @@ def main():
         if not allowed:
             return 'You are not allowed to access this survey'
     
-    salt = secrets.token_urlsafe(16)
-    salt_and_peppered_id = id + config['pepper'] + salt
-    hashed_id = hashlib.sha256(salt_and_peppered_id.encode()).hexdigest()
+    peppered_id = id + config['pepper']
+    hashed_id = hashlib.sha256(peppered_id.encode()).hexdigest()
 
     access_token = secrets.token_urlsafe(32)
     expires = int(time.time()+(30*24*60*60))
@@ -178,8 +177,7 @@ def main():
         results = json.load(f)
 
     results['ids-entered'].append({
-        'hash':hashed_id,
-        'salt':salt
+        'hash':hashed_id
     })
 
     results['access-tokens'].append({
