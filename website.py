@@ -237,7 +237,7 @@ def named(name):
     if token_cookie is not None:
         stored_token = get_access_token(results_file, token_cookie)
 
-    if token_cookie is None:
+    if token_cookie is None or stored_token is None:
         state = secrets.token_urlsafe(16)
         state_nonce = {
             'state':state,
