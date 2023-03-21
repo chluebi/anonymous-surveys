@@ -138,7 +138,7 @@ def main():
     state = request.args.get('state', default=None)
 
     if not (code and state):
-        return 'Nothing here'
+        return 'Nothing here', 404
 
     correct_schema = None
     for _, schema in schemas.items():
@@ -151,7 +151,7 @@ def main():
             break
 
     if correct_schema is None:
-        return 'Invalid state'
+        return 'Invalid state', 404
     
     schema = correct_schema
     folder_path = 'data/' + schema['folder']
@@ -199,13 +199,13 @@ def main():
                 break
 
         if not allowed:
-            return 'You are not allowed to access this survey'
+            return 'You are not allowed to access this survey', 401
     
     peppered_id = id + config['pepper']
     hashed_id = hashlib.sha256(peppered_id.encode()).hexdigest()
 
     if get_hashed_id(results_file, hashed_id) is not None:
-        return 'You have already filled in this survey'
+        return 'You have already filled in this survey', 401
     
     add_hashed_id(results_file, hashed_id)
 
@@ -222,7 +222,7 @@ def main():
 @app.route('/<name>')
 def named(name):
     if name not in schemas:
-        return 'Survey not found'
+        return 'Survey not found', 404
     
     schema = schemas[name]
 
@@ -249,7 +249,7 @@ def named(name):
         return render_template('index.html', url=urllib.parse.quote(URL), client_id=CLIENT_ID, state=state)
     
 
-    return 'You havez cookie :3'
+    return 'You havez cookie :3', 200
 
         
 
