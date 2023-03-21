@@ -6,7 +6,7 @@ import hashlib
 
 import requests
 import urllib.parse
-from flask import Flask, render_template, send_from_directory, request, make_response
+from flask import Flask, render_template, send_from_directory, request, make_response, redirect
 
 app = Flask(__name__)
 
@@ -71,6 +71,27 @@ def get_state_nonce(file, state):
 
     return found_nonce
 
+def add_hashed_id(file, hashed_id):
+    with open(file, 'r') as f:
+        results = json.load(f)
+
+    results['ids-entered'].append({
+        'hash':hashed_id
+    })
+
+    with open(file, 'w') as f:
+        json.dump(results, f, indent=4)
+
+
+def get_hashed_id(file, hashed_id):
+    with open(file, 'r') as f:
+        results = json.load(f)
+
+    for id in results['ids-entered']:
+        if id['hash'] == hashed_id:
+            return id
+
+    return None
 
 
 def prune_access_tokens(file):
@@ -82,6 +103,19 @@ def prune_access_tokens(file):
     new_nonces = list(filter(lambda n: n['expires'] > current_time, nonces))
 
     results['access-tokens'] = new_nonces
+
+    with open(file, 'w') as f:
+        json.dump(results, f, indent=4)
+
+
+def add_access_token(file, token, expires):
+    with open(file, 'r') as f:
+        results = json.load(f)
+
+    results['access-tokens'].append({
+        'token': token,
+        'expires': expires
+    })
 
     with open(file, 'w') as f:
         json.dump(results, f, indent=4)
@@ -170,26 +204,18 @@ def main():
     peppered_id = id + config['pepper']
     hashed_id = hashlib.sha256(peppered_id.encode()).hexdigest()
 
+    if get_hashed_id(results_file, hashed_id) is not None:
+        return 'You have already filled in this survey'
+    
+    add_hashed_id(results_file, hashed_id)
+
     access_token = secrets.token_urlsafe(32)
     expires = int(time.time()+(30*24*60*60))
 
-    with open(results_file, 'r') as f:
-        results = json.load(f)
+    add_access_token(results_file, access_token, expires)
 
-    results['ids-entered'].append({
-        'hash':hashed_id
-    })
-
-    results['access-tokens'].append({
-        'token':access_token,
-        'expires': expires # a month
-    })
-
-    with open(results_file, 'w') as f:
-        json.dump(results, f, indent=4)
-
-    resp = make_response('I gives you a cookie')
-    resp.set_cookie('token-' + schema['url'], access_token, expires=expires, samesite='Strict')
+    resp = make_response(redirect(URL + '/' + schema['url']))
+    resp.set_cookie('token-' + schema['url'], access_token, expires=expires, samesite='Lax')
     return resp
 
 
