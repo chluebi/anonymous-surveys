@@ -237,9 +237,7 @@ def named(name):
     if token_cookie is not None:
         stored_token = get_access_token(results_file, token_cookie)
 
-    if token_cookie is not None and stored_token is not None:
-        return 'You havez cookie :3'
-    else:
+    if token_cookie is None:
         state = secrets.token_urlsafe(16)
         state_nonce = {
             'state':state,
@@ -249,6 +247,11 @@ def named(name):
         add_state_nonce(results_file, state_nonce)
 
         return render_template('index.html', url=urllib.parse.quote(URL), client_id=CLIENT_ID, state=state)
+    
+
+    return 'You havez cookie :3'
+
+        
 
 
 app.run(port=36666, debug=True)
