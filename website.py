@@ -131,6 +131,50 @@ def get_access_token(file, token):
         
     return None
 
+def remove_access_token(file, token):
+    with open(file, 'r') as f:
+        results = json.load(f)
+
+    new_access_tokens = []
+    for stored_token in results['access-tokens']:
+        if stored_token['token'] != token:
+            new_access_tokens.append(stored_token)
+
+    results['access-tokens'] = new_access_tokens
+
+    with open(file, 'w') as f:
+        json.dump(results, f, indent=4)
+
+
+def validate_answer(schema, answers):
+    questions = schema['questions']
+    if len(answers) != len(questions):
+        return False
+
+    for answer, question in zip(answers, questions):
+        if question['type'] == 'multiple-choice':
+            if answer == '':
+                if question['options']['canskip'] is False:
+                    return False
+            elif answer not in question['options']['choices']:
+                if question['options']['textother'] is False:
+                    return False
+                elif len(answer) > 1000:
+                    return False
+        else:
+            raise Exception('Invalid Question Type')
+        
+    return True
+
+def write_answer(file, answer):
+    with open(file, 'r') as f:
+        results = json.load(f)
+
+    results['results'].append(answer)
+
+    with open(file, 'w') as f:
+        json.dump(results, f, indent=4)
+
 
 @app.route('/')
 def main():
@@ -229,8 +273,6 @@ def named(name):
     folder_path = 'data/' + schema['folder']
     results_file = f'{folder_path}/results.json'
 
-    named_url = f'{URL}/{name}'
-
     token_cookie = request.cookies.get('token-' + schema['url'], None)
 
     stored_token = None
@@ -249,9 +291,65 @@ def named(name):
         return render_template('index.html', url=urllib.parse.quote(URL), client_id=CLIENT_ID, state=state)
     
 
-    return 'You havez cookie :3', 200
+    return render_template('quiz.html', url=URL, name=name)
 
-        
 
+@app.route('/<name>/questions')
+def questions(name):
+    if name not in schemas:
+        return 'Survey not found', 404
+    
+    schema = schemas[name]
+
+    folder_path = 'data/' + schema['folder']
+    results_file = f'{folder_path}/results.json'
+
+    token_cookie = request.cookies.get('token-' + schema['url'], None)
+
+    stored_token = None
+    if token_cookie is not None:
+        stored_token = get_access_token(results_file, token_cookie)
+
+    if token_cookie is None or stored_token is None:
+        return 'Not authorized', 401
+    
+    return send_from_directory(f'data/{name}','schema.json')
+
+
+@app.route('/<name>/submit', methods=['POST'])
+def submit(name):
+    if name == 'test':
+        return redirect(URL + "/thanks")
+    
+    if name not in schemas:
+        return 'Survey not found', 404
+    
+    schema = schemas[name]
+
+    folder_path = 'data/' + schema['folder']
+    results_file = f'{folder_path}/results.json'
+
+    token_cookie = request.cookies.get('token-' + schema['url'], None)
+
+    stored_token = None
+    if token_cookie is not None:
+        stored_token = get_access_token(results_file, token_cookie)
+
+    if token_cookie is None or stored_token is None:
+        return 'Not authorized', 401
+    
+    answer = request.json['answers']
+    if not validate_answer(schema, answer):
+        return 'Invalid answer', 406
+    
+    write_answer(results_file, answer)
+    remove_access_token(results_file, stored_token)
+    
+    return 'Done', 200
+
+
+@app.route('/<name>/thanks', methods=['GET'])
+def thanks(name):
+    return 'Thank you for filling out the survey'
 
 app.run(port=36666, debug=True)

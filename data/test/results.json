@@ -1,6 +1,6 @@
 {
-    "nonces":[],
-    "ids-entered":[],
-    "access-tokens":[],
-    "results":{}
+    "nonces": [],
+    "ids-entered": [],
+    "access-tokens": [],
+    "results": []
 }

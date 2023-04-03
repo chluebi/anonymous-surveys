@@ -1,0 +1,214 @@
+<!doctype html>
+<head>
+<title>Hello from Flask</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+    body {
+      background-color: black;
+      color: aliceblue;
+
+      font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    }
+
+    #app {
+      display: grid;
+
+      align-items: center;
+      justify-items: center;
+
+      grid-template-areas: ". title ."
+      ". controls ."
+      ". question .";
+
+      grid-template-columns: 1fr min(80%,700px) 1fr;
+    }
+
+    #title {
+      grid-area: title;
+    }
+
+    #controls {
+      display: grid;
+      grid-area: controls;
+
+      grid-template-areas: "prev . pagenum . next";
+      grid-template-columns: 1fr 1fr 2fr 1fr 1fr;
+    }
+
+    #prev {
+      grid-area: prev;
+    }
+
+    #pagenum {
+      grid-area: pagenum;
+    }
+
+    #next {
+      grid-area: next;
+    }
+    #submit {
+      grid-area: next;
+    }
+
+    #question {
+      grid-area: question;
+    }
+
+    .button {
+      border: 1px solid azure;
+      padding: 5px;
+    }
+
+    .button:hover {
+      background-color: #777777;
+      cursor: pointer;
+    }
+
+    .selected {
+      background-color: #555555;
+    }
+</style>
+</head>
+
+<body>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+<script type="module">
+  const { createApp } = Vue
+  import MultipleChoice from '../static/MultipleChoice.js'
+
+  createApp({
+    delimiters: ["[[", "]]"],
+    components: {
+      MultipleChoice
+    },
+    data() {
+      return {
+        title: "",
+        page: -1,
+        question: {},
+        cancontinue: false,
+        cannext: false,
+        cansubmit: false,
+        answer: -1,
+        questions: []
+      }
+    },
+    methods: {
+      fetchquestions() {
+        let url = "{{ url }}";
+        let name = "{{ name }}";
+        
+        let r = fetch(url + "/" + name + "/questions").then((r) => {
+          return r.json();
+        })
+        .then((data) => {
+          this.title = data.title;
+          this.questions = data.questions;
+
+          for (question of this.questions) {
+            question.answer = {};
+            question.answer.answer = "";
+            question.answer.other = false;
+          }
+
+          this.page = 0;
+          this.loadquestion();
+        });
+      },
+      loadquestion() {
+        this.question = this.questions[this.page];
+        
+        console.log(this.question.answer.answer);
+        this.cancontinue = (this.question.options.canskip || this.question.answer.answer !== "");
+        this.cannext = this.cancontinue && this.page < this.questions.length-1;
+        this.cansubmit = this.cancontinue && !this.cannext;
+      },
+      prev() {
+        this.page--;
+        this.loadquestion();
+      },
+      next() {
+        this.page++;
+        this.loadquestion();
+      },
+      selected(choice) {
+        this.question.answer.other = false;
+        this.question.answer.answer = choice;
+
+        this.questions[this.page] = this.question;
+        this.loadquestion();
+      },
+      selectedother() {
+        this.question.answer.other = true;
+
+        let value = document.getElementById("choice-other").value;
+        if (!value) {
+          value = "";
+        }
+        this.question.answer.answer = value;
+
+        this.questions[this.page] = this.question;
+        this.loadquestion();
+      },
+      submit() {
+        let answers = [];
+        for (question of this.questions) {
+          answers.push(question.answer.answer);
+        }
+
+        let data = {
+          answers: answers
+        }
+
+        let url = "{{ url }}";
+        let name = "{{ name }}";
+
+        const response = fetch(url + "/" + name + "/submit", {
+          method: "POST",
+          mode: "same-origin",
+          cache: "no-cache",
+          credentials: "same-origin",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          redirect: "follow",
+          body: JSON.stringify(data)
+        }).then((r) => {
+          window.location.replace(url + "/" + name + "/thanks");
+        })
+
+      }
+    },
+    beforeMount() {
+      this.fetchquestions();
+    }
+  }).mount('#app')
+</script>
+
+<div id="app">
+  <h1 id="title">[[ title ]]</h1>
+  <div id="controls">
+    <a v-if="page > 0" id="prev" class="button" @click="prev">
+      Previous
+    </a>
+    <div id="pagenum"> Page [[ page+1 ]]/[[ questions.length ]] </div>
+    <a v-if="cannext" id="next" class="button" @click="next">
+      Next
+    </a>
+    <a v-if="cansubmit" id="submit" class="button" @click="submit">
+      Submit
+    </a>
+  </div>
+  <div id="question">
+    <multiple-choice
+    @selected="(choice) => selected(choice)"
+    @selectedother="selectedother()"
+    :question="question"
+    v-if="page >= 0"
+    ></multiple-choice>
+  </div>
+</div>
+
+</body>
