@@ -42,7 +42,7 @@
           this.title = data.title;
           this.questions = data.questions;
 
-          for (question of this.questions) {
+          for (let question of this.questions) {
             question.answer = {};
             question.answer.answer = "";
             question.answer.other = false;
@@ -89,7 +89,7 @@
       },
       submit() {
         let answers = [];
-        for (question of this.questions) {
+        for (let question of this.questions) {
           answers.push(question.answer.answer);
         }
 
