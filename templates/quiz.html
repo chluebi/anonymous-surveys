@@ -1,78 +1,13 @@
 <!doctype html>
 <head>
-<title>Hello from Flask</title>
+<title>{{ name }}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-    body {
-      background-color: black;
-      color: aliceblue;
-
-      font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-    }
-
-    #app {
-      display: grid;
-
-      align-items: center;
-      justify-items: center;
-
-      grid-template-areas: ". title ."
-      ". controls ."
-      ". question .";
-
-      grid-template-columns: 1fr min(80%,700px) 1fr;
-    }
-
-    #title {
-      grid-area: title;
-    }
-
-    #controls {
-      display: grid;
-      grid-area: controls;
-
-      grid-template-areas: "prev . pagenum . next";
-      grid-template-columns: 1fr 1fr 2fr 1fr 1fr;
-    }
-
-    #prev {
-      grid-area: prev;
-    }
-
-    #pagenum {
-      grid-area: pagenum;
-    }
-
-    #next {
-      grid-area: next;
-    }
-    #submit {
-      grid-area: next;
-    }
-
-    #question {
-      grid-area: question;
-    }
-
-    .button {
-      border: 1px solid azure;
-      padding: 5px;
-    }
-
-    .button:hover {
-      background-color: #777777;
-      cursor: pointer;
-    }
-
-    .selected {
-      background-color: #555555;
-    }
-</style>
+<link rel="stylesheet" href="{{ url }}/static/main.css">
 </head>
 
 <body>
 
-<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.min.js"></script>
 
 <script type="module">
   const { createApp } = Vue
@@ -120,7 +55,6 @@
       loadquestion() {
         this.question = this.questions[this.page];
         
-        console.log(this.question.answer.answer);
         this.cancontinue = (this.question.options.canskip || this.question.answer.answer !== "");
         this.cannext = this.cancontinue && this.page < this.questions.length-1;
         this.cansubmit = this.cancontinue && !this.cannext;
@@ -144,6 +78,7 @@
         this.question.answer.other = true;
 
         let value = document.getElementById("choice-other").value;
+
         if (!value) {
           value = "";
         }

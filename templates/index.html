@@ -1,4 +1,64 @@
 <!doctype html>
-<title>Hello from Flask</title>
-<h1>You have no code</h1>
-<a href="https://discord.com/oauth2/authorize?response_type=code&client_id={{ client_id }}&scope=identify%20guilds&state={{ state }}&redirect_uri={{ url }}&prompt=consent">Get code pls</a>
+<head>
+<title>{{ name }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="{{ unparsed_url }}/static/main.css">
+<style>
+    body {
+        text-align: center;
+    }
+
+    main {
+        display: grid;
+        grid-template-columns: 1fr;
+
+        align-items: center;
+        justify-items: center;
+
+        grid-template-areas: ". title ."
+        ". login .";
+
+        grid-template-columns: 1fr min(80%,700px) 1fr;
+    }
+
+    #title {
+        grid-area: title;
+    }
+
+    #login {
+        grid-area: login;
+
+        width: 200px;
+        padding: 10px;
+
+        border: 2px solid azure;
+        display: grid;
+        
+        align-items: center;
+        justify-content: center;
+
+        grid-template-columns: 5fr 1fr;
+    }
+
+    #link {
+        color: azure;
+    }
+
+    #discord-logo {
+        padding-left: 10px;
+
+        width: 20px;
+        height: 20px;
+    }
+</style>
+</head>
+
+<body>
+<main>
+    <h1 id="title">This Survey is only open for users part of certain Discord Guilds</h1>
+    <div id="login">
+        <a id="link" href="https://discord.com/oauth2/authorize?response_type=code&client_id={{ client_id }}&scope=identify%20guilds&state={{ state }}&redirect_uri={{ url }}&prompt=consent">Log in with Discord</a>
+        <img id="discord-logo" src="{{ unparsed_url }}/static/discord-mark-white.svg"/>
+    </div>
+</main>
+</body>
