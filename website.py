@@ -7,6 +7,7 @@ import hashlib
 import requests
 import urllib.parse
 from flask import Flask, render_template, send_from_directory, request, make_response, redirect
+from waitress import serve
 
 app = Flask(__name__)
 
@@ -353,4 +354,4 @@ def thanks(name):
     return 'Thank you for filling out the survey'
 
 
-app.run(port=36666, debug=True)
+serve(app, port=36666, url_scheme='https')
