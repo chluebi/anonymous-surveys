@@ -210,7 +210,7 @@ def update_plots(schema):
 
             df = pd.DataFrame({'choice':list(choices.keys()), 'count':list(choices.values())})
         
-            fig = px.pie(df, values='count', names='choice', title=question['text'])
+            fig = px.pie(df, values='count', names='choice', title=question['text'], color_discrete_sequence=px.colors.sequential.GnBu_r)
             fig.write_html(f'{plot_folder}/{i}.html', include_plotlyjs='cdn')
 
 
