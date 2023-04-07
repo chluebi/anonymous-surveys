@@ -353,5 +353,7 @@ def submit(name):
 def thanks(name):
     return 'Thank you for filling out the survey'
 
-
-serve(app, port=36666, url_scheme='https')
+if config['debug']:
+    app.run(port=36666, debug=True)
+else:
+    serve(app, port=36666, url_scheme='https')
