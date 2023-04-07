@@ -212,6 +212,7 @@ def update_plots(schema):
         
             fig = px.pie(df, values='count', names='choice', title=question['text'], 
                          labels=list(choices.keys()),
+                         category_orders={'choice':list(choices.keys())},
                          color_discrete_sequence=px.colors.sequential.GnBu_r)
             fig.write_html(f'{plot_folder}/{i}.html', include_plotlyjs='cdn')
 
