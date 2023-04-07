@@ -256,8 +256,8 @@ def main():
         if not allowed:
             return 'You are not allowed to access this survey', 401
     
-    peppered_id = id + config['pepper']
-    hashed_id = hashlib.sha256(peppered_id.encode()).hexdigest()
+    peppered_salted_id = id + config['pepper'] + hashlib.sha256(schema['url'].encode()).hexdigest()
+    hashed_id = hashlib.sha256(peppered_salted_id.encode()).hexdigest()
 
     if get_hashed_id(results_file, hashed_id) is not None:
         return 'You have already filled in this survey', 401
