@@ -4,6 +4,7 @@
     "active":false,
     "guild-only":false,
     "guilds":[],
+    "results-public":true,
     "questions": [
         {
             "type": "multiple-choice",
