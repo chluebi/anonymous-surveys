@@ -167,11 +167,21 @@ def validate_answer(schema, answers):
         
     return True
 
+def secure_shuffle(a):
+    b = []
+    while len(a) > 0:
+        el = secrets.choice(a)
+        b.append(el)
+        a.remove(el)
+    
+    return b
+
 def write_answer(file, answer):
     with open(file, 'r') as f:
         results = json.load(f)
 
     results['results'].append(answer)
+    results['results'] = secure_shuffle(results['results'])
 
     with open(file, 'w') as f:
         json.dump(results, f, indent=4)
