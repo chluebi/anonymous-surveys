@@ -12,17 +12,20 @@
 <script type="module">
   const { createApp } = Vue
   import MultipleChoice from '{{ url }}/static/MultipleChoice.js'
+  import TextQuestion from '{{ url }}/static/TextQuestion.js'
 
   createApp({
     delimiters: ["[[", "]]"],
     components: {
-      MultipleChoice
+      MultipleChoice,
+      TextQuestion
     },
     data() {
       return {
         title: "",
         page: -1,
         question: {},
+        questiontype: "",
         cancontinue: false,
         cannext: false,
         cansubmit: false,
@@ -56,6 +59,7 @@
       },
       loadquestion() {
         this.question = this.questions[this.page];
+        this.questiontype = this.question['type']
         
         this.cancontinue = (this.question.options.canskip || this.question.answer.answer !== "");
         this.cannext = this.cancontinue && this.page < this.questions.length-1;
@@ -146,13 +150,18 @@
   <div id="error" v-if="error">
     [[ errormessage ]]
   </div>
-  <div id="question">
+  <div v-if="page >= 0" id="question">
     <multiple-choice
     @selected="(choice) => selected(choice)"
     @selectedother="selectedother()"
     :question="question"
-    v-if="page >= 0"
+    v-if="questiontype === 'multiple-choice'"
     ></multiple-choice>
+    <text-question
+    @selectedother="selectedother()"
+    :question="question"
+    v-if="questiontype === 'text'"
+    ></text-question>
   </div>
 </div>
 

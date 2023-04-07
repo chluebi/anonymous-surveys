@@ -1,0 +1,47 @@
+<!doctype html>
+<head>
+<title>{{ schema['title'] }} results</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="{{ unparsed_url }}/static/main.css">
+<style>
+    #plots {
+        display: grid;
+        grid-template-columns: auto;
+
+        justify-items: center;
+    }
+
+    .plot {
+        width: 60%;
+        height: 200px;
+
+        padding: 20px;
+    }
+
+    .plot-frame {
+        width: 200%;
+        height: 200%;
+
+        -ms-zoom: 0.5;
+        -moz-transform: scale(0.5);
+        -moz-transform-origin: 0 0;
+        -o-transform: scale(0.5);
+        -o-transform-origin: 0 0;
+        -webkit-transform: scale(0.5);
+        -webkit-transform-origin: 0 0;
+    }
+</style>
+
+
+<body>
+    <div id="plots">
+        {%for i, question in questions %}
+            
+            {% if question['type'] == 'multiple-choice' %}
+            <div class="plot">
+            <iframe class="plot-frame" src="{{ url }}/{{schema['url']}}/plot/{{ i }}" title="Plot"></iframe> 
+            </div>
+            {% endif %}
+        {%endfor%}
+    </div>
+</body>

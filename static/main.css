@@ -1,7 +1,8 @@
 body {
-    background-color: black;
+    background-color: rgb(39, 39, 52);
     color: aliceblue;
 
+    font-size: 18px;
     font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 
@@ -44,6 +45,7 @@ body {
 
 #pagenum {
     grid-area: pagenum;
+    text-align: center;
 }
 
 #next {
