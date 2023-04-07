@@ -26,6 +26,8 @@
         cancontinue: false,
         cannext: false,
         cansubmit: false,
+        error: false,
+        errormessage: "Unknown Error Occured", 
         answer: -1,
         questions: []
       }
@@ -111,7 +113,12 @@
           redirect: "follow",
           body: JSON.stringify(data)
         }).then((r) => {
-          window.location.replace(url + "/" + name + "/thanks");
+          if (r.status != 200) {
+            this.errormessage = "Received " + r.status + " Error";
+            this.error = true;
+          } else {
+            window.location.replace(url + "/" + name + "/thanks");
+          }
         })
 
       }
@@ -135,6 +142,9 @@
     <a v-if="cansubmit" id="submit" class="button" @click="submit">
       Submit
     </a>
+  </div>
+  <div id="error" v-if="error">
+    [[ errormessage ]]
   </div>
   <div id="question">
     <multiple-choice

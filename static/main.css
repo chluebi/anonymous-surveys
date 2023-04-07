@@ -13,6 +13,7 @@ body {
 
     grid-template-areas: ". title ."
     ". controls ."
+    ". error ."
     ". question .";
 
     grid-template-columns: 1fr min(80%,700px) 1fr;
@@ -28,6 +29,13 @@ body {
 
     grid-template-areas: "prev . pagenum . next";
     grid-template-columns: 1fr 1fr 2fr 1fr 1fr;
+}
+
+#error {
+    grid-area: error;
+
+    color: red;
+    size: 20px;
 }
 
 #prev {
