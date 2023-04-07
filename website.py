@@ -299,7 +299,6 @@ def named(name):
         prune_state_nonces(results_file)
         add_state_nonce(results_file, state_nonce)
 
-        print('schema', schema)
         return render_template('index.html', unparsed_url=URL, url=urllib.parse.quote(URL), client_id=CLIENT_ID, state=state, schema=schema)
     
 
