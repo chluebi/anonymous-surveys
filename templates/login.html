@@ -71,11 +71,7 @@
 <body>
 <main>
     <h1 id="title">
-        {% if schema['guild-only'] %}
-            This Survey is only open for users part of certain Discord Guilds
-        {% else %}
-            You need to log in to complete this survey
-        {% endif %}
+        You need to log in to access this content
     </h1>
     <div id="login">
         <a id="link" href="https://discord.com/oauth2/authorize?response_type=code&client_id={{ client_id }}&scope=identify%20guilds&state={{ state }}&redirect_uri={{ url }}&prompt=consent">Log in with Discord</a>
@@ -93,18 +89,24 @@
         <div id="about-survey">
             <h3>About this particular survey</h3>
             <ul>
-                {% if schema['guild-only'] %}
+                {% if schema['survey'] == 'private' %}
+                <li> Nobody can access this survey. </li>
+                {% elif schema['survey'] == 'guild-only' %}
                 <li> This survey can only be accessed by users in specific Discord guilds. </li>
-                {% else %}
-                <li> This survey can be accessed by any Discord user. </li>
+                {% elif schema['results'] == 'log-in' %}
+                <li> This survey can only be accessed by users who log in with their Discord Account. </li>
                 {% endif %}
 
                 <li> This survey saves all your answers in one concrete list of answers, meaning they can correlate the different answers you gave with each other. </li>
 
-                {% if schema['results-public'] %}
-                <li> The results of this survey are publicly accessible (but with no additional de-anonymizing data attached). </li>
-                {% else %}
+                {% if schema['results'] == 'private' %}
                 <li> The results of this survey are not publicly accessible. </li>
+                {% elif schema['results'] == 'guild-only' %}
+                <li> The results of this survey can only be accessed by users in specific Discord guilds. </li>
+                {% elif schema['results'] == 'log-in' %}
+                <li> The results of this survey can only be accessed by users who log in with their Discord Account. </li>
+                {% elif schema['results'] == 'public' %}
+                <li> The results of this survey are publicly accessible. </li>
                 {% endif %}
             </ul>
         </div>

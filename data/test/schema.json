@@ -2,9 +2,10 @@
     "title":"test",
     "url":"test",
     "active":false,
-    "guild-only":false,
+    "survey":"guild-only",
     "guilds":[],
-    "results-public":true,
+    "results":"guild-only",
+    "results-only-after":false,
     "questions": [
         {
             "type": "multiple-choice",

@@ -90,7 +90,7 @@ def prune_access_tokens(name):
         json.dump(results, f, indent=4)
 
 
-def add_access_token(name, token, expires):
+def add_access_token(name, token, expires, permissions):
     file = f'data/{name}/results.json'
 
     with open(file, 'r') as f:
@@ -98,7 +98,8 @@ def add_access_token(name, token, expires):
 
     results['access-tokens'].append({
         'token': token,
-        'expires': expires
+        'expires': expires,
+        'permissions': permissions
     })
 
     with open(file, 'w') as f:
@@ -113,7 +114,7 @@ def get_access_token(name, token):
 
     for stored_token in results['access-tokens']:
         if stored_token['token'] == token:
-            return token
+            return stored_token
         
     return None
 
@@ -125,7 +126,7 @@ def remove_access_token(name, token):
 
     new_access_tokens = []
     for stored_token in results['access-tokens']:
-        if stored_token['token'] != token:
+        if stored_token['token'] != token['token']:
             new_access_tokens.append(stored_token)
 
     results['access-tokens'] = new_access_tokens

@@ -121,7 +121,10 @@
             this.errormessage = "Received " + r.status + " Error";
             this.error = true;
           } else {
-            window.location.replace(url + "/" + name + "/thanks");
+            data = r.json().then((data) => {
+              document.cookie = data["name"] + "=" + data["value"] + ";expires=" + data["expires"] + ";path=/"; 
+              window.location.replace(url + "/" + name);
+            });
           }
         })
 
