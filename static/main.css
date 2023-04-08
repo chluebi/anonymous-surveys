@@ -6,6 +6,10 @@ body {
     font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
 }
 
+a {
+    color: rgb(170, 183, 194);
+}
+
 #app {
     display: grid;
 

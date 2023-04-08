@@ -10,6 +10,9 @@ from flask import Flask, render_template, send_from_directory, request, make_res
 from waitress import serve
 
 import plotly.express as px
+import plotly.graph_objects as go
+import plotly.io as pio
+
 import pandas as pd
 
 app = Flask(__name__)
@@ -20,6 +23,17 @@ with open('config.json', 'r') as f:
 CLIENT_ID = config['client-id']
 CLIENT_SECRET = config['client-secret']
 URL = config['url']
+
+
+# changing template
+plotly_template = pio.templates["plotly_dark"]
+
+pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
+pio.templates["plotly_dark_custom"].update({'layout': {
+    # transparent background
+    'paper_bgcolor': 'rgba(39, 39, 52, 255)',
+    'plot_bgcolor': 'rgba(39, 39, 52, 255)'
+}})
 
 
 def prune_state_nonces(name):
@@ -197,7 +211,11 @@ def update_plots(schema):
     if not os.path.exists(plot_folder):
         os.mkdir(plot_folder)
 
+    with open(f'{plot_folder}/all.html', 'w+') as f:
+        f.write('')
+
     for i, question in enumerate(schema['questions']):
+        div_string = ''
         if question['type'] == 'multiple-choice':
             choices = {choice:0 for choice in question['options']['choices']}
             choices['No Answer'] = 0
@@ -208,14 +226,40 @@ def update_plots(schema):
                 else:
                     choices[result[i]] += 1
 
-            df = pd.DataFrame({'choice':list(choices.keys()), 'count':list(choices.values())})
-        
-            fig = px.pie(df, values='count', names='choice', title=question['text'], 
-                         labels=list(choices.keys()),
-                         category_orders={'choice':list(choices.keys())},
-                         color_discrete_sequence=px.colors.sequential.GnBu_r)
-            fig.write_html(f'{plot_folder}/{i}.html', include_plotlyjs='cdn')
+        elif question['type'] == 'text':
+            choices = {'Answered':0, 'No Answer':0}
 
+            for result in results['results']:
+                if result[i] == '':
+                    choices['No Answer'] += 1
+                else:
+                    choices['Answered'] += 1
+
+        df = pd.DataFrame({'choice':list(choices.keys()), 'count':list(choices.values())})
+        
+        fig = px.bar(df, y='count', x='choice', title=question['text'], 
+                        labels=list(choices.keys()),
+                        category_orders={'choice':list(choices.keys())},
+                        color_discrete_sequence=px.colors.sequential.Oryel,
+                        template='plotly_dark_custom')
+
+        file_name = f'{plot_folder}/{i}.html'
+        # div
+        fig.write_html(file_name, 
+                        include_plotlyjs=False,
+                        full_html=False)
+        
+        with open(file_name, 'r') as f:
+            div_string = f.read()
+        
+        # stand-alone file
+        fig.write_html(file_name, 
+                        include_plotlyjs='cdn',
+                        full_html=True)
+        
+        with open(f'{plot_folder}/all.html', 'a') as f:
+            f.write(div_string + '\n')
+            
 
 def write_answer(name, answer):
     file = f'data/{name}/results.json'
@@ -437,8 +481,16 @@ def results(name):
 
         if token_cookie is None or stored_token is None:
             return 'Not authorized', 401
+    
+    plot_folder = f'data/{name}/plots'
+    with open(f'{plot_folder}/all.html', 'r') as f:
+        plots = f.readlines()
+
+    questions = schema['questions']
+
+    questions_plots = zip(range(0,len(questions)), questions, plots)
         
-    return render_template('results.html', url=URL, schema=schema, questions=list(enumerate(schema['questions'])))
+    return render_template('results.html', url=URL, schema=schema, questions_plots=questions_plots)
 
 
 @app.route('/<name>/submit', methods=['POST'])

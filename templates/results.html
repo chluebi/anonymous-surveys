@@ -13,35 +13,19 @@
 
     .plot {
         width: 60%;
-        height: 200px;
-
         padding: 20px;
-    }
-
-    .plot-frame {
-        width: 200%;
-        height: 200%;
-
-        -ms-zoom: 0.5;
-        -moz-transform: scale(0.5);
-        -moz-transform-origin: 0 0;
-        -o-transform: scale(0.5);
-        -o-transform-origin: 0 0;
-        -webkit-transform: scale(0.5);
-        -webkit-transform-origin: 0 0;
     }
 </style>
 
 
 <body>
+    <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
+    <script charset="utf-8" src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
     <div id="plots">
-        {%for i, question in questions %}
-            
-            {% if question['type'] == 'multiple-choice' %}
-            <div class="plot">
-            <iframe class="plot-frame" src="{{ url }}/{{schema['url']}}/plot/{{ i }}" title="Plot"></iframe> 
+        {% for i, question, plot in questions_plots %}
+            <div class="plot" href="{{ url }}/{{ schema['url'] }}/plot/{{i}}">
+                {{ plot|safe }}
             </div>
-            {% endif %}
-        {%endfor%}
+        {% endfor %}
     </div>
 </body>
