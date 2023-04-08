@@ -9,293 +9,14 @@ import urllib.parse
 from flask import Flask, render_template, send_from_directory, request, make_response, redirect
 from waitress import serve
 
-import plotly.express as px
-import plotly.graph_objects as go
-import plotly.io as pio
 
-import pandas as pd
+from util import config, URL, CLIENT_ID, CLIENT_SECRET
+import database as db
+import plotting
+
 
 app = Flask(__name__)
 
-with open('config.json', 'r') as f:
-    config = json.load(f)
-
-CLIENT_ID = config['client-id']
-CLIENT_SECRET = config['client-secret']
-URL = config['url']
-
-
-# changing template
-plotly_template = pio.templates["plotly_dark"]
-
-pio.templates["plotly_dark_custom"] = pio.templates["plotly_dark"]
-pio.templates["plotly_dark_custom"].update({'layout': {
-    # transparent background
-    'paper_bgcolor': 'rgba(39, 39, 52, 255)',
-    'plot_bgcolor': 'rgba(39, 39, 52, 255)'
-}})
-
-
-def prune_state_nonces(name):
-    file = f'data/{name}/results.json'
-
-    with open(file, 'r') as f:
-        results = json.load(f)
-
-    nonces = results['nonces']
-    current_time = time.time()
-    new_nonces = list(filter(lambda n: n['expires'] > current_time, nonces))
-
-    results['nonces'] = new_nonces
-
-    with open(file, 'w') as f:
-        json.dump(results, f, indent=4)
-
-
-def add_state_nonce(name, nonce):
-    file = f'data/{name}/results.json'
-
-    with open(file, 'r') as f:
-        results = json.load(f)
-
-    results['nonces'].append(nonce)
-
-    with open(file, 'w') as f:
-        json.dump(results, f, indent=4)
-
-
-def get_state_nonce(name, state):
-    file = f'data/{name}/results.json'
-
-    with open(file, 'r') as f:
-        results = json.load(f)
-
-    found_nonce = None
-    for nonce in results['nonces']:
-        if nonce['state'] == state:
-            found_nonce = nonce
-            break
-
-    return found_nonce
-
-def add_hashed_id(name, hashed_id):
-    file = f'data/{name}/results.json'
-
-    with open(file, 'r') as f:
-        results = json.load(f)
-
-    results['ids-entered'].append({
-        'hash':hashed_id
-    })
-
-    with open(file, 'w') as f:
-        json.dump(results, f, indent=4)
-
-
-def get_hashed_id(name, hashed_id):
-    file = f'data/{name}/results.json'
-
-    with open(file, 'r') as f:
-        results = json.load(f)
-
-    for id in results['ids-entered']:
-        if id['hash'] == hashed_id:
-            return id
-
-    return None
-
-
-def prune_access_tokens(name):
-    file = f'data/{name}/results.json'
-
-    with open(file, 'r') as f:
-        results = json.load(f)
-
-    nonces = results['access-tokens']
-    current_time = time.time()
-    new_nonces = list(filter(lambda n: n['expires'] > current_time, nonces))
-
-    results['access-tokens'] = new_nonces
-
-    with open(file, 'w') as f:
-        json.dump(results, f, indent=4)
-
-
-def add_access_token(name, token, expires):
-    file = f'data/{name}/results.json'
-
-    with open(file, 'r') as f:
-        results = json.load(f)
-
-    results['access-tokens'].append({
-        'token': token,
-        'expires': expires
-    })
-
-    with open(file, 'w') as f:
-        json.dump(results, f, indent=4)
-
-
-def get_access_token(name, token):
-    file = f'data/{name}/results.json'
-
-    with open(file, 'r') as f:
-        results = json.load(f)
-
-    for stored_token in results['access-tokens']:
-        if stored_token['token'] == token:
-            return token
-        
-    return None
-
-def remove_access_token(name, token):
-    file = f'data/{name}/results.json'
-
-    with open(file, 'r') as f:
-        results = json.load(f)
-
-    new_access_tokens = []
-    for stored_token in results['access-tokens']:
-        if stored_token['token'] != token:
-            new_access_tokens.append(stored_token)
-
-    results['access-tokens'] = new_access_tokens
-
-    with open(file, 'w') as f:
-        json.dump(results, f, indent=4)
-
-
-def validate_answer(schema, answers):
-    questions = schema['questions']
-    if len(answers) != len(questions):
-        return False
-
-    for answer, question in zip(answers, questions):
-        if question['type'] == 'multiple-choice':
-            if answer == '':
-                if question['options']['canskip'] is False:
-                    return False
-            elif answer not in question['options']['choices']:
-                if question['options']['textother'] is False:
-                    return False
-                elif len(answer) > 1000:
-                    return False
-        elif question['type'] == 'text':
-            if answer == '':
-                if question['options']['canskip'] is False:
-                    return False
-            elif len(answer) > 1000:
-                return False
-        else:
-            raise Exception('Invalid Question Type')
-        
-    return True
-
-def secure_shuffle(a):
-    b = []
-    while len(a) > 0:
-        el = secrets.choice(a)
-        b.append(el)
-        a.remove(el)
-    
-    return b
-
-def update_plots(schema):
-    name = schema['folder']
-    file = f'data/{name}/results.json'
-
-    with open(file, 'r') as f:
-        results = json.load(f)
-
-    plot_folder = f'data/{name}/plots'
-    if not os.path.exists(plot_folder):
-        os.mkdir(plot_folder)
-
-    with open(f'{plot_folder}/all.html', 'w+') as f:
-        f.write('')
-
-    for i, question in enumerate(schema['questions']):
-        choices = {}
-        div_string = ''
-
-        if question['type'] == 'multiple-choice':
-            choices = {choice:0 for choice in question['options']['choices']}
-            choices['No Answer'] = 0
-
-            for result in results['results']:
-                if result[i] == '':
-                    choices['No Answer'] += 1
-                else:
-                    choices[result[i]] += 1
-
-        elif question['type'] == 'text':
-            choices = {'Answered':0, 'No Answer':0}
-
-            for result in results['results']:
-                if result[i] == '':
-                    choices['No Answer'] += 1
-                else:
-                    choices['Answered'] += 1
-
-        df = pd.DataFrame({'choice':list(choices.keys()), 'count':list(choices.values())})
-        
-        fig = px.bar(df, y='count', x='choice', title=question['text'], 
-                        labels=list(choices.keys()),
-                        category_orders={'choice':list(choices.keys())},
-                        color='choice',
-                        color_discrete_sequence=px.colors.sequential.Burgyl,
-                        template='plotly_dark_custom')
-
-        file_name = f'{plot_folder}/{i}.html'
-        # div
-        fig.write_html(file_name, 
-                        include_plotlyjs=False,
-                        full_html=False)
-        
-        with open(file_name, 'r') as f:
-            div_string = f.read()
-        
-        # stand-alone file
-        fig.write_html(file_name, 
-                        include_plotlyjs='cdn',
-                        full_html=True)
-        
-        with open(f'{plot_folder}/all.html', 'a') as f:
-            f.write(div_string + '\n')
-            
-
-def write_answer(name, answer):
-    file = f'data/{name}/results.json'
-
-    with open(file, 'r') as f:
-        results = json.load(f)
-
-    results['results'].append(answer)
-    results['results'] = secure_shuffle(results['results'])
-
-    with open(file, 'w') as f:
-        json.dump(results, f, indent=4)
-
-
-schemas = {}
-
-for folder in os.listdir('data'):
-    if not os.path.exists(f'data/{folder}/schema.json'):
-        continue
-
-    with open(f'data/{folder}/schema.json') as f:
-        schema = json.load(f)
-        if not schema['active']:
-            continue
-        if schema['url'] in schemas:
-            raise Exception('conflicting URLs')
-        
-        schema['folder'] = folder
-        schemas[schema['url']] = schema
-
-        prune_state_nonces(schema['folder'])
-        prune_access_tokens(schema['folder'])
-        update_plots(schema)
 
 
 @app.route('/')
@@ -307,9 +28,9 @@ def main():
         return 'Nothing here', 404
 
     correct_schema = None
-    for _, schema in schemas.items():
-        prune_state_nonces(schema['folder'])
-        if get_state_nonce(schema['folder'], state) is not None:
+    for _, schema in db.schemas.items():
+        db.prune_state_nonces(schema['folder'])
+        if db.get_state_nonce(schema['folder'], state) is not None:
             correct_schema = schema
             break
 
@@ -367,16 +88,16 @@ def main():
     peppered_salted_id = id + config['pepper'] + schema['url']
     hashed_id = hashlib.sha256(peppered_salted_id.encode()).hexdigest()
 
-    if get_hashed_id(schema['folder'], hashed_id) is not None:
+    if db.get_hashed_id(schema['folder'], hashed_id) is not None:
         return 'You have already filled in this survey', 401
     
-    add_hashed_id(schema['folder'], hashed_id)
+    db.add_hashed_id(schema['folder'], hashed_id)
 
     access_token = secrets.token_urlsafe(32)
     expires = int(time.time()+(30*24*60*60))
 
-    prune_access_tokens(schema['folder'])
-    add_access_token(schema['folder'], access_token, expires)
+    db.prune_access_tokens(schema['folder'])
+    db.add_access_token(schema['folder'], access_token, expires)
 
     resp = make_response(redirect(URL + '/' + schema['url']))
     resp.set_cookie('token-' + schema['url'], access_token, expires=expires, samesite='Lax')
@@ -385,10 +106,10 @@ def main():
 
 @app.route('/<name>')
 def named(name):
-    if name not in schemas:
+    if name not in db.schemas:
         return 'Survey not found', 404
     
-    schema = schemas[name]
+    schema = db.schemas[name]
 
     folder_path = 'data/' + schema['folder']
     results_file = f'{folder_path}/results.json'
@@ -397,7 +118,7 @@ def named(name):
 
     stored_token = None
     if token_cookie is not None:
-        stored_token = get_access_token(schema['folder'], token_cookie)
+        stored_token = db.get_access_token(schema['folder'], token_cookie)
 
     if token_cookie is None or stored_token is None:
         state = secrets.token_urlsafe(16)
@@ -405,8 +126,8 @@ def named(name):
             'state':state,
             'expires':time.time()+(60*60) # one hour
         }
-        prune_state_nonces(schema['folder'])
-        add_state_nonce(schema['folder'], state_nonce)
+        db.prune_state_nonces(schema['folder'])
+        db.add_state_nonce(schema['folder'], state_nonce)
 
         return render_template('index.html', unparsed_url=URL, url=urllib.parse.quote(URL), client_id=CLIENT_ID, state=state, schema=schema)
     
@@ -416,10 +137,10 @@ def named(name):
 
 @app.route('/<name>/questions')
 def questions(name):
-    if name not in schemas:
+    if name not in db.schemas:
         return 'Survey not found', 404
     
-    schema = schemas[name]
+    schema = db.schemas[name]
 
     folder_path = 'data/' + schema['folder']
     results_file = f'{folder_path}/results.json'
@@ -428,7 +149,7 @@ def questions(name):
 
     stored_token = None
     if token_cookie is not None:
-        stored_token = get_access_token(schema['folder'], token_cookie)
+        stored_token = db.get_access_token(schema['folder'], token_cookie)
 
     if token_cookie is None or stored_token is None:
         return 'Not authorized', 401
@@ -438,10 +159,10 @@ def questions(name):
 
 @app.route('/<name>/plot/<plot_id>')
 def plot(name, plot_id):
-    if name not in schemas:
+    if name not in db.schemas:
         return 'Survey not found', 404
     
-    schema = schemas[name]
+    schema = db.schemas[name]
 
     if not schema['results-public']:
         folder_path = 'data/' + schema['folder']
@@ -451,7 +172,7 @@ def plot(name, plot_id):
 
         stored_token = None
         if token_cookie is not None:
-            stored_token = get_access_token(schema['folder'], token_cookie)
+            stored_token = db.get_access_token(schema['folder'], token_cookie)
 
         if token_cookie is None or stored_token is None:
             return 'Not authorized', 401
@@ -467,10 +188,10 @@ def plot(name, plot_id):
 
 @app.route('/<name>/results')
 def results(name):
-    if name not in schemas:
+    if name not in db.schemas:
         return 'Survey not found', 404
     
-    schema = schemas[name]
+    schema = db.schemas[name]
 
     if not schema['results-public']:
         folder_path = 'data/' + schema['folder']
@@ -480,7 +201,7 @@ def results(name):
 
         stored_token = None
         if token_cookie is not None:
-            stored_token = get_access_token(schema['folder'], token_cookie)
+            stored_token = db.get_access_token(schema['folder'], token_cookie)
 
         if token_cookie is None or stored_token is None:
             return 'Not authorized', 401
@@ -501,10 +222,10 @@ def submit(name):
     if name == 'test':
         return redirect(URL + "/thanks")
     
-    if name not in schemas:
+    if name not in db.schemas:
         return 'Survey not found', 404
     
-    schema = schemas[name]
+    schema = db.schemas[name]
 
     folder_path = 'data/' + schema['folder']
     results_file = f'{folder_path}/results.json'
@@ -513,18 +234,18 @@ def submit(name):
 
     stored_token = None
     if token_cookie is not None:
-        stored_token = get_access_token(schema['folder'], token_cookie)
+        stored_token = db.get_access_token(schema['folder'], token_cookie)
 
     if token_cookie is None or stored_token is None:
         return 'Not authorized', 401
     
     answer = request.json['answers']
-    if not validate_answer(schema, answer):
+    if not db.validate_answer(schema, answer):
         return 'Invalid answer', 406
     
-    write_answer(schema['folder'], answer)
-    remove_access_token(schema['folder'], stored_token)
-    update_plots(schema)
+    db.write_answer(schema['folder'], answer)
+    db.remove_access_token(schema['folder'], stored_token)
+    plotting.update_plots(schema)
     
     return 'Done', 200
 
@@ -533,7 +254,8 @@ def submit(name):
 def thanks(name):
     return 'Thank you for filling out the survey'
 
-if config['debug']:
-    app.run(port=36666, debug=True)
-else:
-    serve(app, port=36666, url_scheme='https')
+def run():
+    if config['debug']:
+        app.run(port=36666, debug=True)
+    else:
+        serve(app, port=36666, url_scheme='https')
