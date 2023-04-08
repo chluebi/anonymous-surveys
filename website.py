@@ -24,7 +24,12 @@ def main():
     state = request.args.get('state', default=None)
 
     if not (code and state):
-        return 'Nothing here', 404
+        public = []
+        for _, schema in db.schemas.items():
+            if schema['results-public']:
+                public.append((schema['title'], schema['url']))
+
+        return render_template('index.html', url=URL, public=public)
 
     correct_schema = None
     for _, schema in db.schemas.items():
@@ -34,7 +39,7 @@ def main():
             break
 
     if correct_schema is None:
-        return 'Invalid state', 404
+        return render_template('status.html', url=URL, code=404, message='Invalid State'), 404
     
     schema = correct_schema
     folder_path = 'data/' + schema['folder']
@@ -82,13 +87,13 @@ def main():
                 break
 
         if not allowed:
-            return 'You are not allowed to access this survey', 401
+            return render_template('status.html', url=URL, code=401, message='Not Authorized'), 401
     
     peppered_salted_id = id + config['pepper'] + schema['url']
     hashed_id = hashlib.sha256(peppered_salted_id.encode()).hexdigest()
 
     if db.get_hashed_id(schema['folder'], hashed_id) is not None:
-        return 'You have already filled in this survey', 401
+        return render_template('status.html', url=URL, code=401, message='You have already filled in this survey'), 401
     
     db.add_hashed_id(schema['folder'], hashed_id)
 
@@ -106,7 +111,7 @@ def main():
 @app.route('/<name>')
 def named(name):
     if name not in db.schemas:
-        return 'Survey not found', 404
+        return render_template('status.html', url=URL, code=404, message='Survey Not Found'), 404
     
     schema = db.schemas[name]
 
@@ -128,7 +133,7 @@ def named(name):
         db.prune_state_nonces(schema['folder'])
         db.add_state_nonce(schema['folder'], state_nonce)
 
-        return render_template('index.html', unparsed_url=URL, url=urllib.parse.quote(URL), client_id=CLIENT_ID, state=state, schema=schema)
+        return render_template('login.html', unparsed_url=URL, url=urllib.parse.quote(URL), client_id=CLIENT_ID, state=state, schema=schema)
     
 
     return render_template('quiz.html', url=URL, name=name)
@@ -137,7 +142,7 @@ def named(name):
 @app.route('/<name>/questions')
 def questions(name):
     if name not in db.schemas:
-        return 'Survey not found', 404
+        return render_template('status.html', url=URL, code=404, message='Survey Not Found'), 404
     
     schema = db.schemas[name]
 
@@ -151,7 +156,7 @@ def questions(name):
         stored_token = db.get_access_token(schema['folder'], token_cookie)
 
     if token_cookie is None or stored_token is None:
-        return 'Not authorized', 401
+        return render_template('status.html', url=URL, code=401, message='Not Authorized'), 401
     
     return send_from_directory(f'data/{name}','schema.json')
 
@@ -159,13 +164,12 @@ def questions(name):
 @app.route('/<name>/plot/<plot_id>')
 def plot(name, plot_id):
     if name not in db.schemas:
-        return 'Survey not found', 404
+        return render_template('status.html', url=URL, code=404, message='Survey Not Found'), 404
     
     schema = db.schemas[name]
 
     if not schema['results-public']:
         folder_path = 'data/' + schema['folder']
-        results_file = f'{folder_path}/results.json'
 
         token_cookie = request.cookies.get('token-' + schema['url'], None)
 
@@ -174,13 +178,13 @@ def plot(name, plot_id):
             stored_token = db.get_access_token(schema['folder'], token_cookie)
 
         if token_cookie is None or stored_token is None:
-            return 'Not authorized', 401
+            return render_template('status.html', url=URL, code=401, message='Not Authorized'), 401
         
         if plot_id < 0 or plot_id >= len(schema['questions']):
-            return 'Invalid Plot Id', 404
+            return render_template('status.html', url=URL, code=404, message='Invalid Plot Id'), 404
         
         if not os.path.exists(f'data/{name}/plots/{plot_id}.html'):
-            return 'Plot should be there, but not found', 500
+            return render_template('status.html', url=URL, code=500, message='Plot should be there, but not found'), 500
         
     return send_from_directory(f'data/{name}/plots', f'{plot_id}.html')
 
@@ -188,7 +192,7 @@ def plot(name, plot_id):
 @app.route('/<name>/results')
 def results(name):
     if name not in db.schemas:
-        return 'Survey not found', 404
+        return render_template('status.html', url=URL, code=404, message='Survey Not Found'), 404
     
     schema = db.schemas[name]
 
@@ -203,7 +207,7 @@ def results(name):
             stored_token = db.get_access_token(schema['folder'], token_cookie)
 
         if token_cookie is None or stored_token is None:
-            return 'Not authorized', 401
+            return render_template('status.html', url=URL, code=401, message='Not Authorized'), 401
     
     plot_folder = f'data/{name}/plots'
     with open(f'{plot_folder}/all.html', 'r') as f:
@@ -219,7 +223,7 @@ def results(name):
 @app.route('/<name>/submit', methods=['POST'])
 def submit(name):
     if name not in db.schemas:
-        return 'Survey not found', 404
+        return render_template('status.html', url=URL, code=404, message='Survey Not Found'), 404
     
     schema = db.schemas[name]
 
@@ -233,23 +237,23 @@ def submit(name):
         stored_token = db.get_access_token(schema['folder'], token_cookie)
 
     if token_cookie is None or stored_token is None:
-        return 'Not authorized', 401
+        return render_template('status.html', url=URL, code=401, message='Not Authorized'), 401
     
     answer = request.json['answers']
     if not db.validate_answer(schema, answer):
-        return 'Invalid answer', 406
+        return render_template('status.html', url=URL, code=406, message='Invalid Answer'), 406
     
     db.write_answer(schema['folder'], answer)
     db.remove_access_token(schema['folder'], stored_token)
     plotting.update_plots(schema)
     
-    return 'Done', 200
+    return render_template('status.html', url=URL, code=200, message='Done'), 200
 
 
 @app.route('/<name>/thanks', methods=['GET'])
 def thanks(name):
     if name not in db.schemas:
-        return 'Survey not found', 404
+        return render_template('status.html', url=URL, code=404, message='Survey Not Found'), 404
     
     schema = db.schemas[name]
 

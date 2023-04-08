@@ -1,113 +1,44 @@
 <!doctype html>
 <head>
-<title>{{ name }}</title>
+<title>Anonymous Surveys</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="{{ unparsed_url }}/static/main.css">
+<link rel="stylesheet" href="{{ url }}/static/main.css">
 <style>
     body {
-        
+        text-align: center;
     }
 
-    a {
-        color: aquamarine;
-    }
-
-    main {
+    .surveys {
         display: grid;
-        grid-template-columns: 1fr;
+        grid-template-columns: auto;
 
-        align-items: center;
         justify-items: center;
-
-        grid-template-areas: ". title ."
-        ". login ."
-        ". privacy-notice .";
-
-        grid-template-columns: 1fr min(80%,700px) 1fr;
     }
 
-    #title {
-        text-align: center;
-        grid-area: title;
-    }
-
-    #login {
-        text-align: center;
-        grid-area: login;
-
-        width: 200px;
-        padding: 10px;
-
-        border: 2px solid azure;
-        display: grid;
-        
-        align-items: center;
-        justify-content: center;
-
-        grid-template-columns: 5fr 1fr;
-    }
-
-    #login:hover {
-        background-color: rgb(72, 82, 91);
-    }
-
-    #link {
-        color: azure;
-    }
-
-    #discord-logo {
-        padding-left: 10px;
-
-        width: 20px;
-        height: 20px;
-    }
-
-    #privacy-notice {
-        grid-area: privacy-notice;
+    .survey {
+        width: 60%;
     }
 </style>
-</head>
+
 
 <body>
-<main>
-    <h1 id="title">
-        {% if schema['guild-only'] %}
-            This Survey is only open for users part of certain Discord Guilds
-        {% else %}
-            You need to log in to complete this survey
+    <h2>Anonymous Surveys</h2>
+
+    <h3>Public Surveys</h3>
+    <div class="surveys">
+        <i>There are currently no public surveys...</i>
+    </div>
+
+    <h3>Public Results</h3>
+    <div class="surveys">
+        {% if public|length == 0 %}
+            <i>There are currently no public surveys...</i>
         {% endif %}
-    </h1>
-    <div id="login">
-        <a id="link" href="https://discord.com/oauth2/authorize?response_type=code&client_id={{ client_id }}&scope=identify%20guilds&state={{ state }}&redirect_uri={{ url }}&prompt=consent">Log in with Discord</a>
-        <img id="discord-logo" src="{{ unparsed_url }}/static/discord-mark-white.svg"/>
+        
+        {% for name, url_name in public %}
+            <a class="survey" href="{{ url }}/{{ url_name }}/results">
+                {{ name }}
+            </a>
+        {% endfor %}
     </div>
-    <div id="privacy-notice">
-        <div id="about-site">
-            <h3>About this Website</h3>
-            This is a hobbyist site by an amateur. I did my best but it is not a professional product.
-             If you trust that this website is running off of the correct source code, the source code can be found <a href="https://github.com/chluebi/anonymous-surveys">here</a>.
-             I need you to log-in with Discord as to limit the spam created by people who want skew survey results and also to allow surveys for only specific guilds.
-             The things I get access to are your discord username and id as well as the names and ids of all servers you are in. I cannot see your email.
-             I do not save any data I receive from this except that I use your id to create a hash which allows me to remember if you've filled in this survey already before.
-        </div>
-        <div id="about-survey">
-            <h3>About this particular survey</h3>
-            <ul>
-                {% if schema['guild-only'] %}
-                <li> This survey can only be accessed by users in specific Discord guilds. </li>
-                {% else %}
-                <li> This survey can be accessed by any Discord user. </li>
-                {% endif %}
-
-                <li> This survey saves all your answers in one concrete list of answers, meaning they can correlate the different answers you gave with each other. </li>
-
-                {% if schema['results-public'] %}
-                <li> The results of this survey are publicly accessible (but with no additional de-anonymizing data attached). </li>
-                {% else %}
-                <li> The results of this survey are not publicly accessible. </li>
-                {% endif %}
-            </ul>
-        </div>
-    </div>
-</main>
 </body>
