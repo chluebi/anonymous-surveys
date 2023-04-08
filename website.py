@@ -38,7 +38,8 @@ def main():
     if not (code and state):
         public = []
         for _, schema in db.schemas.items():
-            if schema['results'] == 'public':
+            public_levels = ['public', 'log-in']
+            if schema['survey'] in public_levels or schema['results'] in public_levels:
                 public.append((schema['title'], schema['url']))
 
         return render_template('index.html', url=URL, public=public)

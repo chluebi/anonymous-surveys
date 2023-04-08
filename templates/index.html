@@ -24,19 +24,14 @@
 <body>
     <h2>Anonymous Surveys</h2>
 
-    <h3>Public Surveys</h3>
-    <div class="surveys">
-        <i>There are currently no public surveys...</i>
-    </div>
-
-    <h3>Public Results</h3>
+    <h3>Available Surveys</h3>
     <div class="surveys">
         {% if public|length == 0 %}
             <i>There are currently no public surveys...</i>
         {% endif %}
         
         {% for name, url_name in public %}
-            <a class="survey" href="{{ url }}/{{ url_name }}/results">
+            <a class="survey" href="{{ url }}/{{ url_name }}">
                 {{ name }}
             </a>
         {% endfor %}
