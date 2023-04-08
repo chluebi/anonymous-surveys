@@ -242,7 +242,8 @@ def update_plots(schema):
         fig = px.bar(df, y='count', x='choice', title=question['text'], 
                         labels=list(choices.keys()),
                         category_orders={'choice':list(choices.keys())},
-                        color_discrete_sequence=px.colors.sequential.Burgyl_r,
+                        color='choice',
+                        color_discrete_sequence=px.colors.sequential.Burgyl,
                         template='plotly_dark_custom')
 
         file_name = f'{plot_folder}/{i}.html'
