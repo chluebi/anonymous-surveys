@@ -1,0 +1,23 @@
+<!doctype html>
+<head>
+<title>Thanks {{ name }}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="{{ url }}/static/main.css">
+<style>
+    body {
+        text-align: center;
+    }
+
+    #results {
+        font-size: large;
+    }
+</style>
+</head>
+
+
+<body>
+    <h2>Thank you for completing this survey.</h2>
+    {% if show_results %}
+    <a id="results" href="{{ url }}/{{ name }}/results">Check out the results</a>
+    {% endif %}
+</body>

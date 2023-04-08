@@ -18,7 +18,6 @@ import plotting
 app = Flask(__name__)
 
 
-
 @app.route('/')
 def main():
     code = request.args.get('code', default=None)
@@ -219,9 +218,6 @@ def results(name):
 
 @app.route('/<name>/submit', methods=['POST'])
 def submit(name):
-    if name == 'test':
-        return redirect(URL + "/thanks")
-    
     if name not in db.schemas:
         return 'Survey not found', 404
     
@@ -252,7 +248,17 @@ def submit(name):
 
 @app.route('/<name>/thanks', methods=['GET'])
 def thanks(name):
-    return 'Thank you for filling out the survey'
+    if name not in db.schemas:
+        return 'Survey not found', 404
+    
+    schema = db.schemas[name]
+
+    show_results = False
+    if schema['results-public']:
+        show_results = True
+
+    return render_template('thanks.html', url=URL, name=name, show_results=show_results)
+
 
 def run():
     if config['debug']:
