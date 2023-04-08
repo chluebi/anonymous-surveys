@@ -2,7 +2,7 @@
 <head>
 <title>{{ schema['title'] }} results</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link rel="stylesheet" href="{{ unparsed_url }}/static/main.css">
+<link rel="stylesheet" href="{{ url }}/static/main.css">
 <style>
     #plots {
         display: grid;
@@ -23,9 +23,9 @@
     <script charset="utf-8" src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
     <div id="plots">
         {% for i, question, plot in questions_plots %}
-            <div class="plot" href="{{ url }}/{{ schema['url'] }}/plot/{{i}}">
+            <a class="plot" href="{{ url }}/{{ schema['url'] }}/plot/{{i}}">
                 {{ plot|safe }}
-            </div>
+            </a>
         {% endfor %}
     </div>
 </body>

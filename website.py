@@ -215,7 +215,9 @@ def update_plots(schema):
         f.write('')
 
     for i, question in enumerate(schema['questions']):
+        choices = {}
         div_string = ''
+
         if question['type'] == 'multiple-choice':
             choices = {choice:0 for choice in question['options']['choices']}
             choices['No Answer'] = 0
@@ -240,7 +242,7 @@ def update_plots(schema):
         fig = px.bar(df, y='count', x='choice', title=question['text'], 
                         labels=list(choices.keys()),
                         category_orders={'choice':list(choices.keys())},
-                        color_discrete_sequence=px.colors.sequential.Oryel,
+                        color_discrete_sequence=px.colors.sequential.Burgyl_r,
                         template='plotly_dark_custom')
 
         file_name = f'{plot_folder}/{i}.html'
