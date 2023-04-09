@@ -48,9 +48,14 @@
           this.questions = data.questions;
 
           for (let question of this.questions) {
-            question.answer = {};
-            question.answer.answer = "";
-            question.answer.other = false;
+            if (question.type === 'multiple-choice') {
+              question.answer = {};
+              question.answer.answer = "";
+              question.answer.other = false;
+            } else if (question.type === 'text') {
+              question.answer = {};
+              question.answer.answer = "";
+            }
           }
 
           this.page = 0;
@@ -73,17 +78,28 @@
         this.page++;
         this.loadquestion();
       },
-      selected(choice) {
+      multiplechoiceselected(choice) {
         this.question.answer.other = false;
         this.question.answer.answer = choice;
 
         this.questions[this.page] = this.question;
         this.loadquestion();
       },
-      selectedother() {
+      multiplechoiceselectedother() {
         this.question.answer.other = true;
 
         let value = document.getElementById("choice-other").value;
+
+        if (!value) {
+          value = "";
+        }
+        this.question.answer.answer = value;
+
+        this.questions[this.page] = this.question;
+        this.loadquestion();
+      },
+      textselected() {
+        let value = document.getElementById("input").value;
 
         if (!value) {
           value = "";
@@ -155,13 +171,13 @@
   </div>
   <div v-if="page >= 0" id="question">
     <multiple-choice
-    @selected="(choice) => selected(choice)"
-    @selectedother="selectedother()"
+    @selected="(choice) => multiplechoiceselected(choice)"
+    @selectedother="multiplechoiceselectedother()"
     :question="question"
     v-if="questiontype === 'multiple-choice'"
     ></multiple-choice>
     <text-question
-    @selectedother="selectedother()"
+    @selected="textselected()"
     :question="question"
     v-if="questiontype === 'text'"
     ></text-question>

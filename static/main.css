@@ -10,6 +10,13 @@ a {
     color: rgb(170, 183, 194);
 }
 
+input {
+    width: 100%;
+    height: 100%;
+
+    color: aliceblue;
+}
+
 #app {
     display: grid;
 
