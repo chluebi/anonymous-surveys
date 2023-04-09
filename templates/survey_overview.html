@@ -21,12 +21,18 @@
 <body>
     <h2>{{ schema['title'] }}</h2>
     {% if show_survey %}
-    <a id="survey" href="{{ url }}/{{ name }}/survey">
-        Complete the survey
-        {% if survey_login %}
-        [Log-in Required]
+        {% if survey_completed %}
+        <p id="survey">
+            Thank you for completing the survey!
+        </p>
+        {% else %}
+        <a id="survey" href="{{ url }}/{{ name }}/survey">
+            Complete the survey
+            {% if survey_login %}
+            [Log-in Required]
+            {% endif %}
+        </a>
         {% endif %}
-    </a>
     {% endif %}
 
     {% if show_results %}

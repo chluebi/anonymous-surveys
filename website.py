@@ -103,9 +103,7 @@ def main():
     peppered_salted_id = id + config['pepper'] + schema['url']
     hashed_id = hashlib.sha256(peppered_salted_id.encode()).hexdigest()
 
-    if db.get_hashed_id(schema['folder'], hashed_id) is not None:
-        return render_template('status.html', url=URL, code=401, message='You have already filled in this survey'), 401
-    
+    completed = db.get_hashed_id(schema['folder'], hashed_id) is not None
     db.add_hashed_id(schema['folder'], hashed_id)
 
     access_token = secrets.token_urlsafe(32)
@@ -113,7 +111,7 @@ def main():
 
     db.prune_access_tokens(schema['folder'])
 
-    permissions = {'survey': False, 'results': False, 'results-after': False}
+    permissions = {'survey': False, 'survey-completed': False, 'results': False, 'results-after': False}
 
     if schema['survey'] == 'log-in':
         permissions['survey'] = True
@@ -129,6 +127,9 @@ def main():
 
     if schema['results'] == 'public':
         permissions['results'] = True
+
+    if completed:
+        permissions['survey-completed'] = True
 
     db.add_access_token(schema['folder'], access_token, expires, permissions)
 
@@ -151,17 +152,19 @@ def named(name):
         stored_token = db.get_access_token(schema['folder'], token_cookie)
 
     show_survey = False
+    survey_completed = False
     show_results = False
     results_login = True
 
     if token_cookie is None or stored_token is None:
         show_survey = True
-        show_results = True
+        show_results = not schema['results-only-after']
         survey_login = True
         results_login = schema['results'] != 'public'
     else:
         show_survey = stored_token['permissions']['survey']
         show_results = stored_token['permissions']['results']
+        survey_completed = stored_token['permissions']['survey-completed']
         survey_login = False
         results_login = False
 
@@ -169,7 +172,8 @@ def named(name):
         show_results = True
 
     return render_template('survey_overview.html', url=URL, name=name, schema=schema,
-        show_survey=show_survey, show_results=show_results, 
+        show_survey=show_survey, survey_completed=survey_completed,
+        show_results=show_results, 
         survey_login=survey_login, results_login=results_login)
 
 
@@ -191,6 +195,9 @@ def survey(name):
     
     if not stored_token['permissions']['survey']:
         return render_template('status.html', url=URL, code=401, message='You do not have permissions to complete this survey.'), 401
+
+    if stored_token['permissions']['survey-completed']:
+        return render_template('status.html', url=URL, code=401, message='You have already completed this survey.'), 401
 
     return render_template('survey.html', url=URL, name=name)
 
@@ -312,7 +319,8 @@ def submit(name):
     
     access_token = secrets.token_urlsafe(32)
     expires = int(time.time()+(365*24*60*60))
-    permissions = {'survey': False, 
+    permissions = {'survey': stored_token['permissions']['survey'], 
+                   'survey-completed': True,
                    'results': stored_token['permissions']['results'] or stored_token['permissions']['results-after'], 
                    'results-after': stored_token['permissions']['results-after']}
 
