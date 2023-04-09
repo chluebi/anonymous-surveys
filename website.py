@@ -229,6 +229,8 @@ def questions(name):
 
 @app.route('/<name>/plot/<plot_id>')
 def plot(name, plot_id):
+    plot_id = int(plot_id)
+
     if name not in db.schemas:
         return render_template('status.html', url=URL, code=404, message='Survey Not Found'), 404
     
@@ -247,11 +249,8 @@ def plot(name, plot_id):
         if not stored_token['permissions']['results']:
             return render_template('status.html', url=URL, code=401, message='You do not have permissions to see this plot.'), 401
         
-        if plot_id < 0 or plot_id >= len(schema['questions']):
-            return render_template('status.html', url=URL, code=404, message='Invalid Plot Id'), 404
-        
         if not os.path.exists(f'data/{name}/plots/{plot_id}.html'):
-            return render_template('status.html', url=URL, code=500, message='Plot should be there, but not found'), 500
+            return render_template('status.html', url=URL, code=404, message='Invalid Plot Id'), 404
         
     return send_from_directory(f'data/{name}/plots', f'{plot_id}.html')
 
@@ -283,11 +282,9 @@ def results(name):
     with open(f'{plot_folder}/all.html', 'r') as f:
         plots = f.readlines()
 
-    questions = schema['questions']
-
-    questions_plots = zip(range(0,len(questions)), questions, plots)
+    enum_plots = enumerate(plots)
         
-    return render_template('results.html', url=URL, schema=schema, questions_plots=questions_plots)
+    return render_template('results.html', url=URL, schema=schema, enum_plots=enum_plots)
 
 
 @app.route('/<name>/submit', methods=['POST'])

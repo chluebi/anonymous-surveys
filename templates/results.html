@@ -22,7 +22,7 @@
     <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
     <script charset="utf-8" src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
     <div id="plots">
-        {% for i, question, plot in questions_plots %}
+        {% for i, plot in enum_plots %}
             <a class="plot" href="{{ url }}/{{ schema['url'] }}/plot/{{i}}">
                 {{ plot|safe }}
             </a>
