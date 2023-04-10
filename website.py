@@ -229,7 +229,6 @@ def questions(name):
 
 @app.route('/<name>/plot/<plot_id>')
 def plot(name, plot_id):
-    plot_id = int(plot_id)
 
     if name not in db.schemas:
         return render_template('status.html', url=URL, code=404, message='Survey Not Found'), 404

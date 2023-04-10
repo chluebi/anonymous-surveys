@@ -15,17 +15,162 @@
         width: 60%;
         padding: 20px;
     }
+
+    .iframe-plot {
+        width: 70%;
+        padding: 20px;
+        height: 400px;
+    }
+
+    .correlate-plot {
+        width: 60%;
+        padding: 20px;
+    }
+
+    .dropdown-current {
+        border: 1px solid azure;
+        padding: 5px;
+    }
+
+    .dropdown-content {
+        display: grid;
+        grid-template-columns: auto;
+
+        position:relative;
+    }
 </style>
 
 
 <body>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.2.47/dist/vue.global.min.js"></script>
+
+<script type="module">
+    const { createApp } = Vue
+
+    createApp({
+        delimiters: ["[[", "]]"],
+        components: {
+        },
+        data() {
+        return {
+            questionstext: [],
+            allquestionstext: [],
+            leftdropdown: {
+                active: false,
+                current: "",
+                options: []
+            },
+            rightdropdown: {
+                active: false,
+                current: "",
+                options: []
+            },
+            url: ""
+        }
+        },
+        methods: {
+            fetchquestions() {
+                let url = "{{ url }}";
+                let name = "{{ schema['url'] }}";
+                
+                let r = fetch(url + "/" + name + "/questions").then((r) => {
+                return r.json();
+                })
+                .then((data) => {
+                    this.questionstext = []
+                    for (let question of data.questions) {
+                        if (question.type === 'multiple-choice') {
+                            this.questionstext.push(question.text);
+                        }
+                        this.allquestionstext.push(question.text);
+                    }
+
+                    this.leftdropdown = {
+                        active: false,
+                        current: this.questionstext[0],
+                        options: this.questionstext
+                    }
+                    this.rightdropdown = {
+                        active: false,
+                        current: this.questionstext[1],
+                        options: this.questionstext
+                    }
+                    this.updatedropdowns();
+                });
+            },
+            updatedropdowns() {
+                let not_included = [];
+                not_included.push(this.leftdropdown.current);
+                not_included.push(this.rightdropdown.current);
+
+                let included = this.questionstext.filter(el => !not_included.includes(el));
+
+                this.leftdropdown.options = included;
+                this.rightdropdown.options = included;
+
+                let leftindex = this.allquestionstext.indexOf(this.leftdropdown.current);
+                let rightindex = this.allquestionstext.indexOf(this.rightdropdown.current);
+
+                this.url = "{{ url }}/{{ schema['url']}}/plot/" + leftindex + "v" + rightindex;
+            },
+            leftchoose(chosen) {
+                this.leftdropdown.active = false; 
+                this.leftdropdown.current = chosen;
+                this.updatedropdowns();
+            },
+            rightchoose(chosen) {
+                this.rightdropdown.active = false; 
+                this.rightdropdown.current = chosen;
+                this.updatedropdowns();
+            }
+        },
+        beforeMount() {
+            this.fetchquestions()
+        },
+    }).mount('#app')
+    </script>
+
+
     <script type="text/javascript">window.PlotlyConfig = {MathJaxConfig: 'local'};</script>
     <script charset="utf-8" src="https://cdn.plot.ly/plotly-2.20.0.min.js"></script>
-    <div id="plots">
-        {% for i, plot in enum_plots %}
-            <a class="plot" href="{{ url }}/{{ schema['url'] }}/plot/{{i}}">
-                {{ plot|safe }}
+    <div id="app">
+        <div id="plots">
+            {% for i, plot in enum_plots %}
+                <a class="plot" href="{{ url }}/{{ schema['url'] }}/plot/{{i}}">
+                    {{ plot|safe }}
+                </a>
+            {% endfor %}
+            {% if schema['correlate-plots'] %}
+            <div class="correlate-plot">
+                Correlation between 
+                <div id="left-dropdown" class="dropdown" @click="leftdropdown.active = !leftdropdown.active">
+                    <div class="dropdown-current selected button"> 
+                        [[ leftdropdown.current ]] 
+                    </div>
+                    <div class="dropdown-content" v-if="leftdropdown.active">
+                        <div class="dropdown-option button" :class="{selected: leftdropdown.current === o}"
+                            v-for="o in leftdropdown.options" @click="leftchoose(o)">
+                            [[ o ]]
+                        </div>
+                    </div>
+                </div>
+                and
+                <div id="right-dropdown" class="dropdown" @click="rightdropdown.active = !rightdropdown.active">
+                    <div class="dropdown-current selected button"> 
+                        [[ rightdropdown.current ]] 
+                    </div>
+                    <div class="dropdown-content" v-if="rightdropdown.active">
+                        <div class="dropdown-option button" :class="{selected: rightdropdown.current === o}"
+                            v-for="o in rightdropdown.options" @click="rightchoose(o)">
+                            [[ o ]]
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <a class="iframe-plot" :href="url">
+                <iframe :src="url"></iframe> 
             </a>
-        {% endfor %}
+            {% endif %}
+        </div>
     </div>
 </body>
