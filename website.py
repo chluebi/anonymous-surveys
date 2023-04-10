@@ -212,17 +212,18 @@ def questions(name):
     folder_path = 'data/' + schema['folder']
     results_file = f'{folder_path}/results.json'
 
-    token_cookie = request.cookies.get('token-' + schema['url'], None)
+    if not schema['results'] == 'public':
+        token_cookie = request.cookies.get('token-' + schema['url'], None)
 
-    stored_token = None
-    if token_cookie is not None:
-        stored_token = db.get_access_token(schema['folder'], token_cookie)
+        stored_token = None
+        if token_cookie is not None:
+            stored_token = db.get_access_token(schema['folder'], token_cookie)
 
-    if token_cookie is None or stored_token is None:
-        return render_template('status.html', url=URL, code=401, message='Not Authorized'), 401
-    
-    if not stored_token['permissions']['results'] and not stored_token['permissions']['survey']:
-        return render_template('status.html', url=URL, code=401, message='You do not have permissions to complete this survey.'), 401
+        if token_cookie is None or stored_token is None:
+            return render_template('status.html', url=URL, code=401, message='Not Authorized'), 401
+
+        if not stored_token['permissions']['results'] and not stored_token['permissions']['survey']:
+            return render_template('status.html', url=URL, code=401, message='You do not have permissions to complete this survey.'), 401
     
     return send_from_directory(f'data/{name}','schema.json')
 
