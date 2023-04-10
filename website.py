@@ -278,7 +278,7 @@ def results(name):
         if not stored_token['permissions']['results']:
             return render_template('status.html', url=URL, code=401, message='You do not have permissions to see the results of this survey.'), 401
     
-    plot_folder = 'data/' + schema['folder']
+    plot_folder = 'data/' + schema['folder'] + '/plots'
     with open(f'{plot_folder}/all.html', 'r') as f:
         plots = f.readlines()
 
