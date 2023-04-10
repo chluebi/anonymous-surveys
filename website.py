@@ -221,7 +221,7 @@ def questions(name):
     if token_cookie is None or stored_token is None:
         return render_template('status.html', url=URL, code=401, message='Not Authorized'), 401
     
-    if not stored_token['permissions']['survey']:
+    if not stored_token['permissions']['results'] and not stored_token['permissions']['survey']:
         return render_template('status.html', url=URL, code=401, message='You do not have permissions to complete this survey.'), 401
     
     return send_from_directory(f'data/{name}','schema.json')
